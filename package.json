@@ -1,0 +1,12 @@
+{
+  "name": "consultasql",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "emite": "node src/gera_danfe.js"
+  },
+  "dependencies": {
+    "danfe-woj": "^0.0.323"
+  }
+}
