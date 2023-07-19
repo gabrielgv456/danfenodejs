@@ -2,11 +2,14 @@
   "name": "consultasql",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "license": "MIT",
   "scripts": {
     "emite": "node src/gera_danfe.js"
   },
   "dependencies": {
-    "danfe-woj": "^0.0.323"
-  }
+    "danfe-woj": "^0.0.323",
+    "xml2js": "^0.6.0"
+  },
+  "devDependencies": {}
 }
