@@ -13,8 +13,8 @@ export function setDestinatario(destinatarioNF) {
         .comComplemento(destinatarioNF?.enderDest[0]?.xCpl?.[0] ?? '')
         .comCep(destinatarioNF?.enderDest[0]?.CEP?.[0] ?? '')
         .comBairro(destinatarioNF?.enderDest[0]?.xBairro?.[0] ?? '')
-        .comMunicipio(destinatarioNF?.enderDest[0]?.cMun?.[0] ?? '')
-        .comCidade(destinatarioNF?.enderDest[0]?.xMun?.[0] ?? '')
+        .comMunicipio(destinatarioNF?.enderDest[0]?.xMun?.[0] ?? '')
+        .comCidade(destinatarioNF?.enderDest[0]?.cMun?.[0] ?? '')
         .comUf(destinatarioNF?.enderDest[0]?.UF?.[0] ?? ''))
     return destinatario
 }
