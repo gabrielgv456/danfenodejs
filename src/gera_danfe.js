@@ -11,33 +11,37 @@ import { setImpostos } from './factories/setImpostos.js';
 import { setVolumes } from './factories/setVolumes.js';
 import { setProduct } from './factories/setProduct.js';
 import { setDanfeInput } from './factories/setDanfeInput.js';
-const pathDoArquivoPdf = path.join(returnDirName(), 'danfe.pdf');
+process.env.TZ = 'America/Sao_Paulo';
+
+for (let i=1; i<=100; i++)  {
+
+const pathDoArquivoPdf = path.join(returnDirName(), `danfe${i}.pdf`);
+const pathDoArquivoXml = path.join(returnDirName(), `arquivo (${i}).xml`);
 
 
 try {
     
-    const dataNf = await ConvertXmlToJson()
-
-    const emitenteNF = dataNf.nfeProc.NFe[0].infNFe[0].emit[0]
+    const dataNf = await ConvertXmlToJson(pathDoArquivoXml)
+    const emitenteNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].emit[0]
     var emitente = setEmitente(emitenteNF)
 
-    const destinatarioNF = dataNf.nfeProc.NFe[0].infNFe[0].dest[0]
+    const destinatarioNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].dest[0]
     var destinatario = setDestinatario(destinatarioNF)
 
-    const transportadorNF = dataNf.nfeProc.NFe[0].infNFe[0].transp?.[0]
+    const transportadorNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].transp?.[0]
     var transportador = setTransportador(transportadorNF)
 
     var protocolo = setProtocolo(dataNf)
 
-    const impostoNF = dataNf.nfeProc.NFe[0].infNFe[0].total[0].ICMSTot[0]
+    const impostoNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].total[0].ICMSTot[0]
     var impostos = setImpostos(impostoNF)
 
-    const volumesNF = dataNf.nfeProc.NFe[0].infNFe[0].transp?.[0].vol?.[0]
+    const volumesNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].transp?.[0].vol?.[0]
     var volumes = setVolumes(volumesNF)
 
     var danfeInput = setDanfeInput(dataNf, emitente, destinatario, transportador, protocolo, impostos, volumes)
 
-    const produtos = dataNf.nfeProc.NFe[0].infNFe[0].det
+    const produtos = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].det
     setProduct(produtos, danfeInput)
 
     new danfe.Gerador(danfeInput).gerarPDF({
@@ -56,4 +60,5 @@ try {
 
 } catch (error) {
     console.log(error.message)
+}
 }
