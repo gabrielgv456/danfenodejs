@@ -1,14 +1,15 @@
 {
-  "name": "consultasql",
+  "name": "danfegenerator",
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "emite": "node src/gera_danfe.js"
+    "dev": "node src/server.js"
   },
   "dependencies": {
     "danfe-woj": "^0.0.323",
+    "express": "^4.19.2",
     "xml2js": "^0.6.0"
   },
   "devDependencies": {}
