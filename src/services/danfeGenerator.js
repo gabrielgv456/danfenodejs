@@ -13,11 +13,16 @@ import { setImpostos } from '../factories/setImpostos.js';
 import { setVolumes } from '../factories/setVolumes.js';
 import { setProduct } from '../factories/setProduct.js';
 import { setDanfeInput } from '../factories/setDanfeInput.js';
+import fsPromises from 'fs/promises';
 process.env.TZ = 'America/Sao_Paulo';
 
-export async function generateDanfe(filePath, filename) {
+export async function generateDanfe(filePath, filename, profile) {
+    const dirArquivoPdf = path.join(returnDirName(), 'success_conversion', profile);
+    if (!fs.existsSync(dirArquivoPdf)) {
+        fs.mkdirSync(dirArquivoPdf, { recursive: true });
+    }
 
-    const pathDoArquivoPdf = path.join(returnDirName() + '/success_conversion/', `${path.parse(filename).name}.pdf`);
+    const pathDoArquivoPdf = path.join(dirArquivoPdf, `${path.parse(filename).name}.pdf`);
     const pathDoArquivoXml = filePath;
 
 

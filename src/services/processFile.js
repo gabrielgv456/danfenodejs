@@ -5,15 +5,16 @@ import path from 'path'
 import { generateDanfe } from './danfeGenerator.js';
 
 
-export async function processarArquivo(folderPath, filename) {
+export async function processarArquivo(folderPath, filename, profile) {
     const filePath = path.join(folderPath, filename);
 
     if (!fs.existsSync(filePath)) return;
 
     console.log(`Arquivo ${filename} adicionado. Executar função...`);
 
-    const successPath = await generateDanfe(filePath, filename);
-
+    const successPath = await generateDanfe(filePath, filename, profile);
+    
+    // deleta xml
     fs.unlink(filePath, (err) => {
         if (err) {
             console.error(`Erro ao deletar o arquivo ${filename}:`, err);
