@@ -5,7 +5,7 @@ import { ConvertXmlToJson } from "../services/convertXmlToJson.js";
 import path from 'path'
 import fs from 'fs'
 import { returnDirName } from "../media/returnDirName.js";
-import { currencyFormat, strCut } from '../utils/utils.js';
+import { addSpaces, currencyFormat, strCut } from '../utils/utils.js';
 import QRCode from 'qrcode'
 
 export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
@@ -21,7 +21,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
     const dataNf = await ConvertXmlToJson(pathDoArquivoXml)
     const infNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].ide[0]
     if (Number(infNF.mod) !== 65) throw new Error('Somente é possivel emitir cupom de notas do modelo 65! Modelo informado: ' + infNF.mod)
-    
+
     const emitenteNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].emit[0]
     const destinatarioNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].dest[0]
     const totalNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].total[0].ICMSTot[0]
@@ -31,7 +31,9 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
     const dataProtocolo = protocoloNF?.dhRecbto?.[0] ? new Date(protocoloNF?.dhRecbto?.[0]).toLocaleDateString() + ' ' + new Date(protocoloNF?.dhRecbto?.[0]).toLocaleTimeString() : ''
     const chaveNf = dataNf.nfeProc?.protNFe?.[0].infProt?.[0].chNFe?.[0] ?? ''
     const emissao = infNF?.dhEmi?.[0] ? new Date(infNF?.dhEmi?.[0]).toLocaleDateString() + ' ' + new Date(infNF?.dhEmi?.[0]).toLocaleTimeString() : ''
-    const urlChave = 'https://portalsped.fazenda.mg.gov.br/portalnfce/' + chaveNf
+    const urlChave = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFeSupl?.[0].qrCode?.[0]
+
+    console.log((dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFeSupl[0])
 
     const ProductData = products.map((product, index) => {
         return [
@@ -157,7 +159,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                 style: 'default',
                 alignment: 'center',
                 margin: [0, 1],
-                text: [urlChave]
+                text: ['https://portalsped.fazenda.mg.gov.br/portalnfce \n' + addSpaces(chaveNf)]
             },
             {
                 style: 'default',
@@ -172,35 +174,29 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                 text: [`NFC-e nº ${String(infNF?.nNF?.[0] ?? '').padStart(9, '0')} Série ${String(infNF?.serie?.[0] ?? '').padStart(3, '0')} ${emissao}`]
             },
             {
-                alignment: 'left',
                 margin: [0, 1],
-                widths: [10, 10],
-                columns: [
+                alignment: 'center',
+                text: [
                     {
-                        text: 'Protocolo de Autorização:',
-                        alignment: 'left',
+                        text: 'Protocolo de Autorização: ',
                         style: 'bold'
                     },
                     {
                         text: protocoloNF.nProt?.[0] ?? '',
-                        alignment: 'right',
                         style: 'default'
                     }
                 ]
             },
             {
-                alignment: 'left',
                 margin: [0, 1],
-                widths: [10, 10],
-                columns: [
+                alignment: 'center',
+                text: [
                     {
-                        text: 'Data de Autorização:',
-                        alignment: 'left',
+                        text: 'Data de Autorização: ',
                         style: 'bold'
                     },
                     {
                         text: dataProtocolo,
-                        alignment: 'right',
                         style: 'default'
                     }
                 ]

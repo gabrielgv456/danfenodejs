@@ -11,3 +11,7 @@ export function strCut(texto,length) {
         return texto;
     }
 }
+
+export function addSpaces(str) {
+    return str.replace(/(.{4})/g, '$1 ').trim();
+}
