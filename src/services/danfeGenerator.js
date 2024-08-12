@@ -16,15 +16,13 @@ import { setDanfeInput } from '../factories/setDanfeInput.js';
 import fsPromises from 'fs/promises';
 process.env.TZ = 'America/Sao_Paulo';
 
-export async function generateDanfe(filePath, filename, profile) {
+export async function generateDanfe(pathDoArquivoXml, filename, profile) {
     const dirArquivoPdf = path.join(returnDirName(), 'success_conversion', profile);
     if (!fs.existsSync(dirArquivoPdf)) {
         fs.mkdirSync(dirArquivoPdf, { recursive: true });
     }
 
     const pathDoArquivoPdf = path.join(dirArquivoPdf, `${path.parse(filename).name}.pdf`);
-    const pathDoArquivoXml = filePath;
-
 
     const dataNf = await ConvertXmlToJson(pathDoArquivoXml)
     const emitenteNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].emit[0]
@@ -48,6 +46,7 @@ export async function generateDanfe(filePath, filename, profile) {
 
     const produtos = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].det
     setProduct(produtos, danfeInput)
+
 
     await new Promise((resolve, reject) => {
         new danfe.Gerador(danfeInput).gerarPDF({
