@@ -19,13 +19,14 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
 
     const printer = new pdfMake(fonts)
     const dataNf = await ConvertXmlToJson(pathDoArquivoXml)
-
+    const infNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].ide[0]
+    if (Number(infNF.mod) !== 65) throw new Error('Somente é possivel emitir cupom de notas do modelo 65! Modelo informado: ' + infNF.mod)
+    
     const emitenteNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].emit[0]
     const destinatarioNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].dest[0]
     const totalNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].total[0].ICMSTot[0]
     const products = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].det
     const payments = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].pag
-    const infNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].ide[0]
     const protocoloNF = dataNf.nfeProc?.protNFe?.[0].infProt?.[0]
     const dataProtocolo = protocoloNF?.dhRecbto?.[0] ? new Date(protocoloNF?.dhRecbto?.[0]).toLocaleDateString() + ' ' + new Date(protocoloNF?.dhRecbto?.[0]).toLocaleTimeString() : ''
     const chaveNf = dataNf.nfeProc?.protNFe?.[0].infProt?.[0].chNFe?.[0] ?? ''
@@ -53,8 +54,6 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
         });
     })
 
-    console.log(QrCodeChave)
-
     const docParams = {
         pageSize: {
             width: 250,
@@ -71,21 +70,6 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
         // }],
         //footer:[]
         content: [
-            // {
-            //     style: 'title',
-            //     text: 'Comprovante de Venda'
-            // },
-            // {
-            //     style: 'title',
-            //     table: {
-            //         widths: [170],
-            //         alignment: 'center',
-            //         // body: [
-            //         //     [userInfo?.urlLogo ? { image: 'logo', width: 170, alignment: 'center' } : { text: '' }],
-            //         // ]
-            //     },
-            //     layout: 'noBorders',
-            // },
             {
                 style: 'title',
                 alignment: 'center',
@@ -224,7 +208,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
             {
                 image: 'qrCode',
                 width: 150,
-                alignment:'center'
+                alignment: 'center'
             },
             {
                 style: 'default',
