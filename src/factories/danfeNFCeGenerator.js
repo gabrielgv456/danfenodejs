@@ -63,14 +63,6 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
         },
         pageMargins: 15,
         PageOrientation: 'portrait',
-        //pageMargins: [15,50,15,40],
-
-        //header:[],
-        //content:[{
-        //   text:"teste",
-        //   fontSize:15,
-        // }],
-        //footer:[]
         content: [
             {
                 style: 'title',
