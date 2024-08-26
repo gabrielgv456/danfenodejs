@@ -1,3 +1,5 @@
+//@ts-check
+
 import danfe from 'danfe-woj'
 
 export function setDanfeInput(dataNf, emitente, destinatario, transportador, protocolo, impostos, volumes) {

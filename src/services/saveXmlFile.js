@@ -18,7 +18,7 @@ export async function saveXMLToFile(xmlContent, directory, fileName) {
             if (err) {
                 reject(err);
             } else {
-                resolve(`Arquivo salvo com sucesso em: ${filePath}`);
+                resolve(`Arquivo XML salvo com sucesso em: ${filePath}`);
             }
         });
     });

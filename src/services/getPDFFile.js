@@ -1,19 +1,17 @@
 //@ts-check
 import fs from 'fs'
 
-export function getPDFFile(filePath, res) {
+export async function getPDFFile(filePath, res) {
     // Verifica se o arquivo existe
     if (!fs.existsSync(filePath)) {
-        res.status(404).send('Arquivo não encontrado: ' + filePath);
-        return;
+        throw new Error('Arquivo não encontrado: ' + filePath);
     }
 
-    // Define o cabeçalho para indicar que é um arquivo PDF
-    res.setHeader('Content-Type', 'application/pdf');
-
-    // Cria um stream de leitura do arquivo PDF
-    const readStream = fs.createReadStream(filePath);
-
-    // Encaminha o stream para a resposta
-    readStream.pipe(res);
+    fs.readFile(filePath, (err, data) => {
+        if (err) {
+            throw new Error(err.message)
+        }
+        console.log('gerou base64'+filePath)
+        return res.status(200).json({ success: true, danfe: data.toString('base64') })
+    })
 }

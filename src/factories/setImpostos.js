@@ -1,7 +1,7 @@
 import danfe from 'danfe-woj'
 
 export function setImpostos(impostoNF) {
-
+    console.log(impostoNF)
     var impostos = new danfe.Impostos();
     impostos.comBaseDeCalculoDoIcms(impostoNF?.vBC?.[0] ?? '');
     impostos.comValorDoIcms(impostoNF?.vICMS?.[0] ?? '');

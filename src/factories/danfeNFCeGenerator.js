@@ -23,7 +23,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
     if (Number(infNF.mod) !== 65) throw new Error('Somente é possivel emitir cupom de notas do modelo 65! Modelo informado: ' + infNF.mod)
 
     const emitenteNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].emit[0]
-    const destinatarioNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].dest[0]
+    const destinatarioNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].dest?.[0]
     const totalNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].total[0].ICMSTot[0]
     const products = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].det
     const payments = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].pag
@@ -33,7 +33,6 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
     const emissao = infNF?.dhEmi?.[0] ? new Date(infNF?.dhEmi?.[0]).toLocaleDateString() + ' ' + new Date(infNF?.dhEmi?.[0]).toLocaleTimeString() : ''
     const urlChave = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFeSupl?.[0].qrCode?.[0]
 
-    console.log((dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFeSupl[0])
 
     const ProductData = products.map((product, index) => {
         return [
@@ -157,7 +156,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                 style: 'default',
                 alignment: 'center',
                 margin: [0, 1],
-                text: [destinatarioNF?.xNome?.[0].toUpperCase() ?? '']
+                text: [destinatarioNF?.xNome?.[0].toUpperCase() ?? 'CONSUMIDOR NÃO IDENTIFICADO']
             },
             {
                 style: 'bold',
@@ -234,28 +233,33 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
 
     }
 
-    const dirArquivoPdf = path.join(returnDirName(), 'success_conversion', profile);
-    if (!fs.existsSync(dirArquivoPdf)) {
-        fs.mkdirSync(dirArquivoPdf, { recursive: true });
-    }
+    return new Promise((resolve, reject) => {
+        try {
+            const dirArquivoPdf = path.join(returnDirName(), 'success_conversion', profile);
+            if (!fs.existsSync(dirArquivoPdf)) {
+                fs.mkdirSync(dirArquivoPdf, { recursive: true });
+            }
 
-    const pathDoArquivoPdf = path.join(dirArquivoPdf, `${path.parse(filename).name}.pdf`);
+            const pathDoArquivoPdf = path.join(dirArquivoPdf, `${path.parse(filename).name}.pdf`);
 
-    //@ts-ignore
-    const pdfDoc = printer.createPdfKitDocument(docParams);
+            //@ts-ignore
+            const pdfDoc = printer.createPdfKitDocument(docParams);
 
-    const writeStream = fs.createWriteStream(pathDoArquivoPdf);
+            const writeStream = fs.createWriteStream(pathDoArquivoPdf);
 
-    pdfDoc.pipe(writeStream);
-    pdfDoc.end();
+            pdfDoc.pipe(writeStream);
+            pdfDoc.end();
 
-    writeStream.on('finish', () => {
-        console.log('PDF gerado e salvo com sucesso em: ', pathDoArquivoPdf);
-    });
+            writeStream.on('finish', () => {
+                console.log('PDF gerado e salvo com sucesso em: ', pathDoArquivoPdf);
+                resolve(pathDoArquivoPdf); 
+            });
 
-    writeStream.on('error', (err) => {
-        throw new Error('Erro ao salvar o PDF:' + err);
-    });
-
-    return pathDoArquivoPdf
+            writeStream.on('error', (err) => {
+                reject(new Error('Erro ao salvar o PDF: ' + err)); 
+            });
+        } catch (err) {
+            reject(err); 
+        }
+    })
 } 
