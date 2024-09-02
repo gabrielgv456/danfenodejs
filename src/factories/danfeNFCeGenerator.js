@@ -5,8 +5,9 @@ import { ConvertXmlToJson } from "../services/convertXmlToJson.js";
 import path from 'path'
 import fs from 'fs'
 import { returnDirName } from "../media/returnDirName.js";
-import { addSpaces, currencyFormat, strCut } from '../utils/utils.js';
+import { addSpaces, cpfCnpjFormat, currencyFormat, strCut } from '../utils/utils.js';
 import QRCode from 'qrcode'
+import { PaymentType } from '../utils/enums.js';
 
 export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
 
@@ -26,7 +27,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
     const destinatarioNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].dest?.[0]
     const totalNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].total[0].ICMSTot[0]
     const products = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].det
-    const payments = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].pag
+    const payments = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].pag?.[0].detPag
     const protocoloNF = dataNf.nfeProc?.protNFe?.[0].infProt?.[0]
     const dataProtocolo = protocoloNF?.dhRecbto?.[0] ? new Date(protocoloNF?.dhRecbto?.[0]).toLocaleDateString() + ' ' + new Date(protocoloNF?.dhRecbto?.[0]).toLocaleTimeString() : ''
     const chaveNf = dataNf.nfeProc?.protNFe?.[0].infProt?.[0].chNFe?.[0] ?? ''
@@ -36,15 +37,16 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
 
     const ProductData = products.map((product, index) => {
         return [
-            { text: String(index + 1).padStart(3, index) }, { text: product.prod?.[0].cProd?.[0] ?? '' }, { text: strCut(product.prod?.[0].xProd?.[0], 25) ?? '' }, { text: Number(product.prod?.[0].qCom?.[0]).toFixed(2) ?? '' }, { text: product.prod?.[0].uCom?.[0] ?? '' }, { text: currencyFormat(product.prod?.[0].vUnCom?.[0]) ?? '' }, { text: currencyFormat(product.prod?.[0].vProd?.[0]) ?? '' }
+            { text: String(index + 1) }, { text: product.prod?.[0].cProd?.[0] ?? '' }, { text: strCut(product.prod?.[0].xProd?.[0], 25) ?? '' }, { text: Number(product.prod?.[0].qCom?.[0]).toFixed(2) ?? '' }, { text: product.prod?.[0].uCom?.[0] ?? '' }, { text: currencyFormat(product.prod?.[0].vUnCom?.[0], true) ?? '' }, { text: currencyFormat(product.prod?.[0].vProd?.[0], true) ?? '' }
         ]
     })
 
-    const PaymentData = payments.map((pay) => {
+    const PaymentData = payments ? (payments.map((pay) => {
         return [
-            { text: 'CARTAO' }, { text: currencyFormat(pay.detPag[0]?.vPag) ?? '', alignment: 'right' }
+            { text: PaymentType[pay?.tPag] ?? '' }, { text: currencyFormat(pay?.vPag) ?? '', alignment: 'right' }
         ]
-    })
+    })) : ([[{ text: '' }, { text: ''}]])
+    
     const QrCodeChave = await new Promise((resolve, reject) => {
         QRCode.toDataURL(urlChave, function (err, QrCodeChave) {
             if (err) {
@@ -57,10 +59,10 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
 
     const docParams = {
         pageSize: {
-            width: 250,
+            width: 210, // valor em polegadas * 72
             height: 'auto'
         },
-        pageMargins: 15,
+        pageMargins: 5,
         PageOrientation: 'portrait',
         content: [
             {
@@ -72,7 +74,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                 style: 'default',
                 alignment: 'center',
                 text: [
-                    `CNPJ: ${emitenteNF?.CNPJ?.[0] ?? ''} ${' '} ${emitenteNF?.xNome?.[0] ?? ''}`,
+                    `CNPJ: ${cpfCnpjFormat(emitenteNF?.CNPJ?.[0] ?? '')} ${' '} ${emitenteNF?.xNome?.[0] ?? ''}`,
                     ` ${emitenteNF?.enderEmit?.[0]?.xLgr?.[0] ?? ''}, ${emitenteNF?.enderEmit?.[0]?.nro?.[0] ?? ''}`,
                     ` ${emitenteNF?.enderEmit?.[0]?.xBairro?.[0] ?? ''}`,
                     ` ${emitenteNF?.enderEmit?.[0]?.xMun?.[0] ?? ''} - ${emitenteNF?.enderEmit[0]?.UF?.[0] ?? ''}`,
@@ -90,10 +92,10 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                 style: 'default',
                 layout: 'noBorders',
                 table: {
-                    widths: ['auto', 'auto', 45, 'auto', 'auto', 'auto', 'auto'],
+                    widths: ['auto', 'auto', 37, 'auto', 'auto', 'auto', 'auto'],
 
                     body: [
-                        [{ text: '#' }, { text: 'Cód.' }, { text: 'Descrição' }, { text: 'Qtde' }, { text: 'Un' }, { text: 'Valor Unit.' }, { text: 'Valor total' }],
+                        [{ text: '#' }, { text: 'Cód.' }, { text: 'Descrição' }, { text: 'Qtd' }, { text: 'Un' }, { text: 'Valor Unit(R$)' }, { text: 'Valor total(R$)' }],
                         ...ProductData
                     ]
                 }
@@ -201,7 +203,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                 style: 'default',
                 margin: [0, 1],
                 alignment: 'center',
-                text: [`Tributos Totais Incidentes(Lei Federal 12.741/12): ${currencyFormat(totalNF?.vTotTrib ?? '')}`]
+                text: [`Tributos Totais Incidentes(Lei Federal 12.741/12): ${currencyFormat(totalNF?.vTotTrib ?? '0')}`]
             },
             {
                 style: 'footer',
@@ -212,19 +214,19 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
 
         styles: {
             title: {
-                fontSize: 11, bold: true, margin: [0, 6]
+                fontSize: 12, bold: true, margin: [0, 6]
             },
             bold: {
-                bold: true, fontSize: 7
+                bold: true, fontSize: 8
             },
             highlight: {
-                bold: true, fontSize: 9
+                bold: true, fontSize: 10
             },
             default: {
-                fontSize: 7
+                fontSize: 8
             },
             footer: {
-                fontSize: 5, margin: [0, 8], alignment: 'center'
+                fontSize: 6, margin: [0, 8], alignment: 'center'
             }
         },
         images: {
@@ -252,14 +254,14 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
 
             writeStream.on('finish', () => {
                 console.log('PDF gerado e salvo com sucesso em: ', pathDoArquivoPdf);
-                resolve(pathDoArquivoPdf); 
+                resolve(pathDoArquivoPdf);
             });
 
             writeStream.on('error', (err) => {
-                reject(new Error('Erro ao salvar o PDF: ' + err)); 
+                reject(new Error('Erro ao salvar o PDF: ' + err));
             });
         } catch (err) {
-            reject(err); 
+            reject(err);
         }
     })
 } 

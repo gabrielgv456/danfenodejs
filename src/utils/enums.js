@@ -1,0 +1,20 @@
+export const PaymentType = {
+    '01': 'DINHEIRO',
+    '02': 'CHEQUE',
+    '03': 'CARTAO CREDITO',
+    '04': 'CARTAO DEBITO',
+    '05': 'CREDITO LOJA',
+    '10': 'VALE ALIMENTACAO',
+    '11': 'VALE REFEICAO',
+    '12': 'VALE PRESENTE',
+    '13': 'VALE COMBUSTIVEL',
+    '14': 'DUPLICATA MERCANTIL',
+    '15': 'BOLETO BANCARIO',
+    '16': 'DEPOSITO BANCARIO',
+    '17': 'PAGAMENTO INSTANTANEO',
+    '18': 'TRANSF BANCARIO',
+    '19': 'PROGRAMA FIDELIDADE',
+    '90': 'SEM PAGAMENTO',
+    '98': 'REGIME ESPECIAL',
+    '99': 'OUTRO'
+};
