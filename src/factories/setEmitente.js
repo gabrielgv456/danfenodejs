@@ -3,11 +3,11 @@ import path from 'path'
 import { returnDirName } from '../media/returnDirName.js';
 
 
-export function setEmitente(emitenteNF) {
+export function setEmitente(emitenteNF, logoBase64) {
 
     var emitente = new danfe.Emitente();
     emitente.comNome(emitenteNF?.xNome?.[0] ?? '');
-    emitente.comLogotipo(path.join(returnDirName(), './logotipo.png'));
+    if (logoBase64) emitente.comLogotipo(logoBase64);
     emitente.comRegistroNacional(emitenteNF?.CNPJ?.[0] ?? '');
     emitente.comInscricaoEstadual(emitenteNF?.IE?.[0] ?? '');
     emitente.comTelefone(emitenteNF?.enderEmit[0]?.fone?.[0] ?? '');

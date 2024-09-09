@@ -6,7 +6,7 @@ import { generateDanfe } from './danfeGenerator.js';
 import { generateDanfeNFC } from '../factories/danfeNFCeGenerator.js';
 
 
-export async function processarArquivo(folderPathXml, filenameXml, profile, model) {
+export async function processarArquivo(folderPathXml, filenameXml, profile, model, logoBase64, positionYEmitDataNFe, positionYLogoNFe) {
 
     const filePathXml = path.join(folderPathXml, filenameXml);
     if (!fs.existsSync(filePathXml)) throw new Error('Não foi encontrado o arquivo XML');
@@ -15,7 +15,7 @@ export async function processarArquivo(folderPathXml, filenameXml, profile, mode
 
     try {
         const successPath = model === 'NFE' ?
-            await generateDanfe(filePathXml, filenameXml, profile) :
+            await generateDanfe(filePathXml, filenameXml, profile, logoBase64, positionYEmitDataNFe, positionYLogoNFe) :
             model === 'NFCE' ?
                 await generateDanfeNFC(filePathXml, filenameXml, profile) : console.log('Model incorreto')
 

@@ -6,7 +6,8 @@ export function setDestinatario(destinatarioNF) {
 
     var destinatario = new danfe.Destinatario();
     destinatario.comNome(destinatarioNF?.xNome?.[0] ?? '');
-    destinatario.comRegistroNacional(destinatarioNF?.CPF?.[0] ?? '');
+    const doc = destinatarioNF?.CPF?.[0] ?? destinatarioNF?.CNPJ?.[0] 
+    destinatario.comRegistroNacional(doc ?? '');
     destinatario.comTelefone(destinatarioNF?.enderDest[0]?.fone?.[0] ?? '');
     destinatario.comInscricaoEstadual(destinatarioNF?.IE?.[0] ?? '')
     destinatario.comEndereco(new danfe.Endereco()

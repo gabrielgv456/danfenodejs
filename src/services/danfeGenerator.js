@@ -16,7 +16,7 @@ import { setDanfeInput } from '../factories/setDanfeInput.js';
 import fsPromises from 'fs/promises';
 process.env.TZ = 'America/Sao_Paulo';
 
-export async function generateDanfe(pathDoArquivoXml, filename, profile) {
+export async function generateDanfe(pathDoArquivoXml, filename, profile, logoBase64, positionYEmitDataNFe, positionYLogoNFe) {
     const dirArquivoPdf = path.join(returnDirName(), 'success_conversion', profile);
     if (!fs.existsSync(dirArquivoPdf)) {
         fs.mkdirSync(dirArquivoPdf, { recursive: true });
@@ -26,7 +26,7 @@ export async function generateDanfe(pathDoArquivoXml, filename, profile) {
 
     const dataNf = await ConvertXmlToJson(pathDoArquivoXml)
     const emitenteNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].emit[0]
-    var emitente = setEmitente(emitenteNF)
+    var emitente = setEmitente(emitenteNF, logoBase64)
 
     const destinatarioNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].dest[0]
     var destinatario = setDestinatario(destinatarioNF)
@@ -50,10 +50,11 @@ export async function generateDanfe(pathDoArquivoXml, filename, profile) {
 
     await new Promise((resolve, reject) => {
         new danfe.Gerador(danfeInput).gerarPDF({
-            ambiente: 'homologacao',
-            ajusteYDoLogotipo: -4,
-            ajusteYDaIdentificacaoDoEmitente: 4,
-            creditos: 'Safyra.com.br - Gestão do seu negócio!'
+            ambiente: (String((dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe?.[0].ide?.[0].tpAmb[0] ?? '')) === '1' ? 'producao' : 'homologacao',
+            ajusteYDoLogotipo: positionYLogoNFe,
+            ajusteYDaIdentificacaoDoEmitente: positionYEmitDataNFe,
+            creditos: 'Safyra.com.br - Gestão do seu negócio!',
+            pathCredits: path.join(returnDirName(), 'creditLogo.png')
         }, function (err, pdf) {
             if (err) {
                 reject(err);

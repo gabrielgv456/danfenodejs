@@ -8,7 +8,7 @@ import path from 'path'
 
 export const danfeGeneratorRoute = async (request, response) => {
     try {
-        const { xml, NFe, profile, model } = request.body
+        const { xml, NFe, profile, model, logoBase64, positionYEmitDataNFe, positionYLogoNFe } = request.body
         if (!xml) throw new Error('Informe o XML')
         if (!NFe) throw new Error('Informe a chave da NFe')
         if (!profile) throw new Error('Informe o profile')
@@ -16,7 +16,7 @@ export const danfeGeneratorRoute = async (request, response) => {
 
         const pathWaiting = path.join(returnDirName(), 'waiting_conversion', profile)
         await saveXMLToFile(xml, pathWaiting, NFe)
-        const pathSuccess = await processarArquivo(pathWaiting, NFe, profile, model)
+        const pathSuccess = await processarArquivo(pathWaiting, NFe, profile, model, logoBase64, positionYEmitDataNFe, positionYLogoNFe)
         if (!pathSuccess) throw new Error('Ocorreu uma falha ao processar o arquivo')
         getPDFFile(pathSuccess, response)
     } catch (error) {

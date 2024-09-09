@@ -1,38 +1,52 @@
 export function currencyFormat(value, noSymbol) {
-    if (!value) return ''
-    return new Intl.NumberFormat('pt-BR', { style:  `${noSymbol ? 'decimal' : 'currency'}`, currency: 'BRL' }).format(value)
+  if (!value) return ''
+  return new Intl.NumberFormat('pt-BR', { style: `${noSymbol ? 'decimal' : 'currency'}`, currency: 'BRL' }).format(value)
 }
 
 
-export function strCut(texto,length) {
-    if (texto.length > length) {
-        return texto.substring(0, length) + '...';
-    } else {
-        return texto;
-    }
+export function strCut(texto, length) {
+  if (texto.length > length) {
+    return texto.substring(0, length) + '...';
+  } else {
+    return texto;
+  }
 }
 
 export function addSpaces(str) {
-    return str.replace(/(.{4})/g, '$1 ').trim();
+  return str.replace(/(.{4})/g, '$1 ').trim();
 }
 
 export function cpfCnpjFormat(text) {
-    if (!text) { return '' }
-    const localMax = text
-    const cpfCnpj = removeNotNumerics(text)
-    return (
-      cpfCnpj.length === 11 ?
-        cpfCnpj.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/g, "$1.$2.$3-$4") :
-        cpfCnpj.length === 14 ?
-          cpfCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/g, "$1.$2.$3/$4-$5") :
-          cpfCnpj.length > 14 ?
-            localMax
-            :
-            cpfCnpj)
+  if (!text) { return '' }
+  const localMax = text
+  const cpfCnpj = removeNotNumerics(text)
+  return (
+    cpfCnpj.length === 11 ?
+      cpfCnpj.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/g, "$1.$2.$3-$4") :
+      cpfCnpj.length === 14 ?
+        cpfCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/g, "$1.$2.$3/$4-$5") :
+        cpfCnpj.length > 14 ?
+          localMax
+          :
+          cpfCnpj)
+}
+
+export function removeNotNumerics(text) {
+  if (!text) { return '' }
+  return (text.replace(/[^0-9]/g, ''))
+}
+
+
+export function acessarPrimeiraProp(obj) {
+  const chaves = Object.keys(obj);
+  if (chaves.length > 0) {
+    const primeiraProp = chaves[0];
+    return obj[primeiraProp];
   }
-  
-  export function removeNotNumerics(text) {
-    if (!text) { return '' }
-    return (text.replace(/[^0-9]/g, ''))
-  }
-  
+  return null;
+}
+
+export function base64ToBuffer(base64) {
+  const base64Data = base64.replace(/^data:image\/\w+;base64,/, ""); 
+  return Buffer.from(base64Data, 'base64');
+}
