@@ -10,7 +10,6 @@ export function setImpostos(impostoNF) {
     impostos.comValorDoPis(impostoNF?.vPIS?.[0] ?? '');
     impostos.comValorTotalDoIpi(impostoNF?.vIPI?.[0] ?? '');
     impostos.comValorDaCofins(impostoNF?.vCOFINS?.[0] ?? '');
-    //impostos.comBaseDeCalculoDoIssqn(40);
-    //impostos.comValorTotalDoIssqn(30);
+    impostos.comValorTotalDosProdutos(impostoNF?.vProd?.[0] ?? '');
     return impostos
 }

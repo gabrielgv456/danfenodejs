@@ -1,6 +1,7 @@
 //@ts-check
 
 import danfe from 'danfe-woj'
+import { toDanfeDateTime } from '../utils/utils.js'
 
 export function setDanfeInput(dataNf, emitente, destinatario, transportador, protocolo, impostos, volumes) {
 
@@ -19,9 +20,9 @@ export function setDanfeInput(dataNf, emitente, destinatario, transportador, pro
     danfeInput.comNaturezaDaOperacao(infNF?.natOp?.[0] ?? '');
     danfeInput.comNumero(infNF?.nNF?.[0] ?? '');
     danfeInput.comSerie(infNF?.serie?.[0] ?? '');
-    danfeInput.comDataDaEmissao(infNF?.dhEmi?.[0] ? new Date(infNF?.dhEmi?.[0]).toISOString().slice(0, -5) : '');
-    danfeInput.comDataDaEntradaOuSaida(infNF?.dhSaiEnt?.[0] ? new Date(infNF?.dhSaiEnt?.[0]).toISOString().slice(0, -5) : '');
-    danfeInput.comModalidadeDoFrete((dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].transp?.[0].transporta?.[0]?.modFrete?.[0] ?? '');
+    danfeInput.comDataDaEmissao(toDanfeDateTime(infNF?.dhEmi?.[0] ?? ''));
+    danfeInput.comDataDaEntradaOuSaida(toDanfeDateTime(infNF?.dhSaiEnt?.[0] ?? ''));
+    danfeInput.comModalidadeDoFrete((dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].transp?.[0]?.modFrete?.[0] ?? '');
     //danfeInput.comInscricaoEstadualDoSubstitutoTributario('102959579');
     danfeInput.comInformacoesComplementares((dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].infAdic?.[0].infCpl?.[0] ?? (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe ).infNFe[0].infAdic?.[0].infAdFisco?.[0] ?? '')
     danfeInput.comValorTotalDaNota(totalNF?.vNF?.[0] ?? '');

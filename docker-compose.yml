@@ -1,0 +1,11 @@
+services:
+  danfe:
+    image: ${DANFE_IMAGE:-ghcr.io/gabrielgv456/danfenodejs:latest}
+    build: .
+    container_name: danfe-generator
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8090}:8090"
+    environment:
+      NODE_ENV: production
+      PORT: 8090

@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log*
+yarn.lock
+.git
+.gitignore
+.cursor
+.env
+.env.*
+output.pdf
+test-output.pdf
+test-*.mjs
+*.xml
+src/media/waiting_conversion
+src/media/success_conversion
+ecosystem.config.js
+ecosystem.config.zip

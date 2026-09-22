@@ -1,193 +1,149 @@
 # danfenodejs
 
-**Generate DANFE (Auxiliary Document of the Electronic Invoice) from an XML**  
-This Node.js project allows you to parse a Brazilian NF-e XML file and generate its DANFE (Documento Auxiliar da Nota Fiscal Eletrônica), typically as a PDF output.
-
----
-
-## Table of Contents
-
-- [About](#about)  
-- [Requirements](#requirements)  
-- [Installation](#installation)  
-- [Usage](#usage)  
-- [Project Structure](#project-structure)  
-- [Configuration](#configuration)  
-- [Available Scripts](#available-scripts)  
-- [Contributing](#contributing)  
-- [License](#license)  
-- [Examples](#examples)  
-
----
-
-## About
-
-This application:
-
-- Reads and parses a **NF-e XML file**.  
-- Extracts all the relevant data for the DANFE.  
-- Generates a PDF (or other supported format) with the proper DANFE layout.  
-- Includes an example output file: `output.pdf`.
+HTTP service that converts Brazilian NF-e / NFC-e XML into a DANFE PDF and returns it as base64. Conversion only — no authentication.
 
 Repository: [gabrielgv456/danfenodejs](https://github.com/gabrielgv456/danfenodejs)
 
----
-
 ## Requirements
 
-Before running the project, make sure you have:
-
-- **Node.js** (LTS version recommended)  
-- **npm** or **yarn** package manager  
-- (Optional) Native libraries for PDF generation or HTML rendering (depending on your OS)  
-
----
+- Node.js (LTS recommended)
+- npm
 
 ## Installation
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/gabrielgv456/danfenodejs.git
-   cd danfenodejs
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. (Optional) Install system dependencies if your PDF generator library requires them.
-
----
-
-## Usage
-
-Example of usage inside a Node.js project:
-
-```js
-const path = require('path');
-const { generateDanfe } = require('./src'); // adjust path as needed
-
-const xmlPath = path.join(__dirname, 'invoice.xml');
-const outputPath = path.join(__dirname, 'danfe.pdf');
-
-generateDanfe(xmlPath, outputPath)
-  .then(() => {
-    console.log('DANFE successfully generated at', outputPath);
-  })
-  .catch(err => {
-    console.error('Failed to generate DANFE:', err);
-  });
+```bash
+git clone https://github.com/gabrielgv456/danfenodejs.git
+cd danfenodejs
+npm install
 ```
 
-- `xmlPath`: path to the input NF-e XML file  
-- `outputPath`: path where the generated DANFE PDF will be saved  
-
-You can also run it directly from the command line if a CLI script is added:
+## Run
 
 ```bash
-node src/index.js ./examples/invoice.xml ./output/danfe.pdf
+npm run dev
 ```
 
----
+Starts Express on port **8090** (`src/server.js`). Production: `npm start`.
 
-## Project Structure
+## Docker
+
+### Local
+
+```bash
+docker compose up -d --build
+```
+
+Service on port **8090** (`PORT=8080 docker compose up -d` to remap).
+
+### Production deploy (GitHub Actions → AWS VPS)
+
+Push to `master` builds the image on GitHub (not on the VPS), pushes to **GHCR**, then SSHs into the VPS to `pull` + `up -d`.
+
+**GitHub Actions secrets** (`Settings → Secrets and variables → Actions`):
+
+| Secret | Required | Description |
+| --- | --- | --- |
+| `VPS_HOST` | yes | VPS IP or hostname |
+| `VPS_USER` | yes | SSH user (`ubuntu`, `ec2-user`, …) |
+| `VPS_SSH_PRIVATE_KEY` | yes | Private key (full PEM) matching `~/.ssh/authorized_keys` on the VPS |
+| `VPS_DEPLOY_PATH` | yes | Absolute path on the VPS for `docker-compose.yml` (e.g. `/opt/danfe`) |
+| `VPS_PORT` | no | SSH port (default `22`) |
+| `GHCR_TOKEN` | if package is private | PAT with `read:packages` so the VPS can `docker pull` from GHCR |
+
+`GITHUB_TOKEN` is provided automatically for pushing the image (needs `packages: write` — already set in the workflow).
+
+**One-time VPS setup:**
+
+```bash
+sudo mkdir -p /opt/danfe
+# install Docker + Compose plugin
+# add the deploy public key to ~/.ssh/authorized_keys for VPS_USER
+```
+
+Optional: make the GHCR package public (`Package settings → Change visibility`) so you can skip `GHCR_TOKEN`.
+
+```bash
+# logs on VPS
+cd /opt/danfe && docker compose logs -f danfe
+```
+
+## API
+
+### `POST /danfeGenerator`
+
+Converts an authorized NF-e (model 55) or NFC-e (model 65) XML into a DANFE PDF.
+
+**Request body (JSON):**
+
+```json
+{
+  "xml": "<nfeProc>...</nfeProc>",
+  "NFe": "44-digit-access-key",
+  "profile": "tenant-or-folder-id",
+  "model": "NFE",
+  "logoBase64": "optional",
+  "positionYEmitDataNFe": 0,
+  "positionYLogoNFe": 0
+}
+```
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `xml` | yes | Full NF-e / NFC-e XML string |
+| `NFe` | yes | Access key (kept for API compatibility / logging) |
+| `profile` | yes | Client/tenant id (kept for API compatibility / logging) |
+| `model` | yes | `"NFE"` (DANFE A4 via danfe-woj) or `"NFCE"` (cupom via pdfmake) |
+| `logoBase64` | no | Emitente logo (NF-e only) |
+| `positionYEmitDataNFe` | no | Vertical adjust for emitente block (NF-e) |
+| `positionYLogoNFe` | no | Vertical adjust for logo (NF-e) |
+
+**Success response:**
+
+```json
+{
+  "success": true,
+  "danfe": "<base64 pdf>"
+}
+```
+
+**Error response:**
+
+```json
+{
+  "success": false,
+  "error": "message"
+}
+```
+
+Conversion is **in-memory**: XML is parsed from the request body and the PDF is returned as base64. Nothing is persisted under `media/`.
+
+## Project structure
 
 ```text
 danfenodejs/
 ├── src/
-│   ├── index.js             ← main entry point
-│   ├── parser/              ← XML parsing logic
-│   ├── template/            ← HTML/templates for DANFE
-│   ├── pdf/                 ← PDF generation logic
-│   └── utils/               ← helper utilities
-├── output.pdf               ← sample generated DANFE
-├── package.json  
-├── yarn.lock / package-lock.json  
+│   ├── server.js              ← Express entry (port 8090)
+│   ├── routes/
+│   │   └── routes.js          ← POST /danfeGenerator
+│   ├── factories/             ← HTTP handler + XML→DANFE field mappers
+│   ├── services/              ← XML parse + PDF generate (in-memory)
+│   ├── media/                 ← fonts and logos only
+│   └── utils/
+├── Dockerfile
+├── docker-compose.yml
+├── package.json
 └── README.md
 ```
 
----
+## Scripts
 
-## Configuration
+| Script | Command | Description |
+| --- | --- | --- |
+| `dev` | `nodemon src/server.js` | Development server with reload |
+| `start` | `node src/server.js` | Production server (used by Docker) |
 
-You may configure:
-
-- **Templates**: HTML/CSS templates for DANFE layout  
-- **Paper size & margins**: A4, margins, orientation  
-- **Branding**: custom logos or headers  
-- **Fonts**: make sure to include the fonts you want to embed in the PDF  
-
-Environment variables may be added in the future for better flexibility.
-
----
-
-## Available Scripts
-
-Defined inside `package.json`, for example:
-
-```json
-{
-  "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "jest",
-    "lint": "eslint .",
-    "generate": "node generate.js",
-    "clean": "rm -rf output.pdf"
-  }
-}
-```
-
-- `npm start` → runs the main application  
-- `npm run dev` → runs in development mode with hot reload  
-- `npm test` → runs unit tests (if implemented)  
-- `npm run lint` → checks code style  
-- `npm run generate` → generates a DANFE using a sample XML  
-
----
-
-## Contributing
-
-Contributions are welcome! To contribute:
-
-1. Open an **issue** to discuss new features or bugs.  
-2. Fork this repository.  
-3. Create a feature branch: `git checkout -b feature/my-feature`.  
-4. Commit your changes with a clear message.  
-5. Push to your branch and submit a Pull Request.  
-
----
+There is no CLI entrypoint; use the HTTP API above.
 
 ## License
 
-This project is licensed under the **MIT License**.  
-See the [LICENSE](LICENSE) file for details.
-
----
-
-## Examples
-
-### CLI Example
-
-```bash
-node src/index.js ./examples/sample.xml ./output/sample.pdf
-```
-
-### Programmatic Example
-
-```js
-const { generateDanfe } = require('danfenodejs');
-
-generateDanfe('./invoice.xml', './danfe.pdf')
-  .then(() => console.log('Done!'))
-  .catch(console.error);
-```
-
----
-
-🚀 With this, you’re ready to generate DANFE from NF-e XML files using Node.js!
+MIT. See the [LICENSE](LICENSE) file for details.

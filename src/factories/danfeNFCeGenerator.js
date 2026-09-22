@@ -3,37 +3,83 @@
 import pdfMake from 'pdfmake'
 import { ConvertXmlToJson } from "../services/convertXmlToJson.js";
 import path from 'path'
-import fs from 'fs'
 import { returnDirName } from "../media/returnDirName.js";
 import { addSpaces, cpfCnpjFormat, currencyFormat, strCut } from '../utils/utils.js';
 import QRCode from 'qrcode'
 import { PaymentType } from '../utils/enums.js';
 
-export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
+/** @type {Record<string, string>} */
+const NFCE_CONSULTA_URL_BY_UF = {
+    AC: 'https://www.sefaznet.ac.gov.br/nfce/consulta',
+    AL: 'https://nfce.sefaz.al.gov.br/consultaNFCe.htm',
+    AM: 'https://sistemas.sefaz.am.gov.br/nfceweb/formConsulta.do',
+    AP: 'https://www.sefaz.ap.gov.br/sate/seg/SEGf_AcessarFuncao.jsp?cdFuncao=FIS_1261',
+    BA: 'https://nfe.sefaz.ba.gov.br/servicos/nfce/default.aspx',
+    CE: 'https://nfce.sefaz.ce.gov.br/pages/ShowNFCe.html',
+    DF: 'https://www.fazenda.df.gov.br/nfce/consulta',
+    ES: 'https://app.sefaz.es.gov.br/ConsultaNFCe',
+    GO: 'https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfce/danfeNFCe',
+    MA: 'https://www.nfce.sefaz.ma.gov.br/portal/consultaNFe.do',
+    MG: 'https://portalsped.fazenda.mg.gov.br/portalnfce',
+    MS: 'https://www.dfe.ms.gov.br/nfce/consulta',
+    MT: 'https://www.sefaz.mt.gov.br/nfce/consultanfce',
+    PA: 'https://appnfc.sefa.pa.gov.br/portal/view/consultas/nfce/consultanfce.seam',
+    PB: 'https://www.sefaz.pb.gov.br/nfce',
+    PE: 'https://nfce.sefaz.pe.gov.br/nfce/consulta',
+    PI: 'https://www.sefaz.pi.gov.br/nfce/consulta',
+    PR: 'https://www.fazenda.pr.gov.br/nfce/consulta',
+    RJ: 'https://www.nfce.fazenda.rj.gov.br/consulta',
+    RN: 'https://nfce.set.rn.gov.br/portalDFE/NFCe/ConsultaNFCe.aspx',
+    RO: 'https://www.nfce.sefin.ro.gov.br',
+    RR: 'https://www.sefaz.rr.gov.br/nfce/servlet/wp_consulta_nfce',
+    RS: 'https://www.sefaz.rs.gov.br/NFCE/NFCE-COM.aspx',
+    SC: 'https://sat.sef.sc.gov.br/tax.net/Sat.DFe.NFCe.Web/Consultas/ConsultaPublicaNFe.aspx',
+    SE: 'https://www.nfce.se.gov.br/nfce/consulta',
+    SP: 'https://www.nfce.fazenda.sp.gov.br/consulta',
+    TO: 'https://www.sefaz.to.gov.br/nfce/consulta',
+}
+
+/**
+ * @param {string | undefined} uf
+ * @param {string | undefined} urlChaveConsulta
+ */
+function resolveConsultaUrl(uf, urlChaveConsulta) {
+    if (urlChaveConsulta) return urlChaveConsulta
+    const key = (uf ?? '').toUpperCase()
+    return NFCE_CONSULTA_URL_BY_UF[key] ?? ''
+}
+
+export const generateDanfeNFC = async (xml) => {
 
     const fonts = {
         Roboto: {
-            normal: 'src/media/fonts/Roboto-Regular.ttf',
-            bold: 'src/media/fonts/Roboto-Bold.ttf'
+            normal: path.join(returnDirName(), 'fonts', 'Roboto-Regular.ttf'),
+            bold: path.join(returnDirName(), 'fonts', 'Roboto-Bold.ttf')
         }
     };
 
     const printer = new pdfMake(fonts)
-    const dataNf = await ConvertXmlToJson(pathDoArquivoXml)
-    const infNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].ide[0]
+    const dataNf = await ConvertXmlToJson(xml)
+    const nfeRoot = dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe
+    const infNF = nfeRoot.infNFe[0].ide[0]
     if (Number(infNF.mod) !== 65) throw new Error('Somente é possivel emitir cupom de notas do modelo 65! Modelo informado: ' + infNF.mod)
 
-    const emitenteNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].emit[0]
-    const destinatarioNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].dest?.[0]
-    const totalNF = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].total[0].ICMSTot[0]
-    const products = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].det
-    const payments = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFe[0].pag?.[0].detPag
+    const emitenteNF = nfeRoot.infNFe[0].emit[0]
+    const destinatarioNF = nfeRoot.infNFe[0].dest?.[0]
+    const totalNF = nfeRoot.infNFe[0].total[0].ICMSTot[0]
+    const products = nfeRoot.infNFe[0].det
+    const payments = nfeRoot.infNFe[0].pag?.[0].detPag
     const protocoloNF = dataNf.nfeProc?.protNFe?.[0].infProt?.[0]
     const dataProtocolo = protocoloNF?.dhRecbto?.[0] ? new Date(protocoloNF?.dhRecbto?.[0]).toLocaleDateString() + ' ' + new Date(protocoloNF?.dhRecbto?.[0]).toLocaleTimeString() : ''
     const chaveNf = dataNf.nfeProc?.protNFe?.[0].infProt?.[0].chNFe?.[0] ?? ''
     const emissao = infNF?.dhEmi?.[0] ? new Date(infNF?.dhEmi?.[0]).toLocaleDateString() + ' ' + new Date(infNF?.dhEmi?.[0]).toLocaleTimeString() : ''
-    const urlChave = (dataNf.nfeProc?.NFe?.[0] ?? dataNf.NFe).infNFeSupl?.[0].qrCode?.[0]
+    const qrCodeUrl = nfeRoot.infNFeSupl?.[0]?.qrCode?.[0]
+    const urlChaveConsulta = nfeRoot.infNFeSupl?.[0]?.urlChave?.[0]
+    const consultaUrl = resolveConsultaUrl(emitenteNF?.enderEmit?.[0]?.UF?.[0], urlChaveConsulta)
 
+    if (!qrCodeUrl) {
+        throw new Error('QR Code da NFC-e não encontrado no XML (infNFeSupl.qrCode)')
+    }
 
     const ProductData = products.map((product, index) => {
         return [
@@ -43,12 +89,12 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
 
     const PaymentData = payments ? (payments.map((pay) => {
         return [
-            { text: PaymentType[pay?.tPag] ?? '' }, { text: currencyFormat(pay?.vPag) ?? '', alignment: 'right' }
+            { text: PaymentType[pay?.tPag?.[0]] ?? '' }, { text: currencyFormat(pay?.vPag?.[0]) ?? '', alignment: 'right' }
         ]
     })) : ([[{ text: '' }, { text: ''}]])
-    
+
     const QrCodeChave = await new Promise((resolve, reject) => {
-        QRCode.toDataURL(urlChave, function (err, QrCodeChave) {
+        QRCode.toDataURL(qrCodeUrl, function (err, QrCodeChave) {
             if (err) {
                 reject(err);
             } else {
@@ -63,7 +109,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
             height: 'auto'
         },
         pageMargins: 5,
-        PageOrientation: 'portrait',
+        pageOrientation: 'portrait',
         content: [
             {
                 style: 'title',
@@ -74,12 +120,12 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                 style: 'default',
                 alignment: 'center',
                 text: [
-                    `CNPJ: ${cpfCnpjFormat(emitenteNF?.CNPJ?.[0] ?? '')} ${' '} ${emitenteNF?.xNome?.[0] ?? ''}`,
+                    `CNPJ: ${cpfCnpjFormat(emitenteNF?.CNPJ?.[0] ?? emitenteNF?.CPF?.[0] ?? '')} ${' '} ${emitenteNF?.xNome?.[0] ?? ''}`,
                     ` ${emitenteNF?.enderEmit?.[0]?.xLgr?.[0] ?? ''}, ${emitenteNF?.enderEmit?.[0]?.nro?.[0] ?? ''}`,
                     ` ${emitenteNF?.enderEmit?.[0]?.xBairro?.[0] ?? ''}`,
-                    ` ${emitenteNF?.enderEmit?.[0]?.xMun?.[0] ?? ''} - ${emitenteNF?.enderEmit[0]?.UF?.[0] ?? ''}`,
+                    ` ${emitenteNF?.enderEmit?.[0]?.xMun?.[0] ?? ''} - ${emitenteNF?.enderEmit?.[0]?.UF?.[0] ?? ''}`,
                     ` ${emitenteNF?.enderEmit?.[0]?.CEP?.[0] ?? ''} \n`,
-                    ` Fone:${emitenteNF?.enderEmit[0]?.fone?.[0] ?? ''} I.E.: ${emitenteNF?.IE?.[0] ?? ''}`,
+                    ` Fone:${emitenteNF?.enderEmit?.[0]?.fone?.[0] ?? ''} I.E.: ${emitenteNF?.IE?.[0] ?? ''}`,
                 ]
             },
             {
@@ -152,13 +198,13 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                 style: 'default',
                 alignment: 'center',
                 margin: [0, 1],
-                text: ['https://portalsped.fazenda.mg.gov.br/portalnfce \n' + addSpaces(chaveNf)]
+                text: [(consultaUrl ? consultaUrl + ' \n' : '') + addSpaces(chaveNf)]
             },
             {
                 style: 'default',
                 alignment: 'center',
                 margin: [0, 1],
-                text: [destinatarioNF?.xNome?.[0].toUpperCase() ?? 'CONSUMIDOR NÃO IDENTIFICADO']
+                text: [destinatarioNF?.xNome?.[0]?.toUpperCase() ?? 'CONSUMIDOR NÃO IDENTIFICADO']
             },
             {
                 style: 'bold',
@@ -175,7 +221,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                         style: 'bold'
                     },
                     {
-                        text: protocoloNF.nProt?.[0] ?? '',
+                        text: protocoloNF?.nProt?.[0] ?? '',
                         style: 'default'
                     }
                 ]
@@ -203,7 +249,7 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
                 style: 'default',
                 margin: [0, 1],
                 alignment: 'center',
-                text: [`Tributos Totais Incidentes(Lei Federal 12.741/12): ${currencyFormat(totalNF?.vTotTrib ?? '0')}`]
+                text: [`Tributos Totais Incidentes(Lei Federal 12.741/12): ${currencyFormat(totalNF?.vTotTrib?.[0] ?? '0')}`]
             },
             {
                 style: 'footer',
@@ -237,31 +283,16 @@ export const generateDanfeNFC = async (pathDoArquivoXml, filename, profile) => {
 
     return new Promise((resolve, reject) => {
         try {
-            const dirArquivoPdf = path.join(returnDirName(), 'success_conversion', profile);
-            if (!fs.existsSync(dirArquivoPdf)) {
-                fs.mkdirSync(dirArquivoPdf, { recursive: true });
-            }
-
-            const pathDoArquivoPdf = path.join(dirArquivoPdf, `${path.parse(filename).name}.pdf`);
-
             //@ts-ignore
             const pdfDoc = printer.createPdfKitDocument(docParams);
-
-            const writeStream = fs.createWriteStream(pathDoArquivoPdf);
-
-            pdfDoc.pipe(writeStream);
-            pdfDoc.end();
-
-            writeStream.on('finish', () => {
-                console.log('PDF gerado e salvo com sucesso em: ', pathDoArquivoPdf);
-                resolve(pathDoArquivoPdf);
-            });
-
-            writeStream.on('error', (err) => {
-                reject(new Error('Erro ao salvar o PDF: ' + err));
-            });
+            /** @type {Buffer[]} */
+            const chunks = []
+            pdfDoc.on('data', (chunk) => chunks.push(Buffer.from(chunk)))
+            pdfDoc.on('end', () => resolve(Buffer.concat(chunks)))
+            pdfDoc.on('error', (err) => reject(new Error('Erro ao gerar o PDF: ' + err)))
+            pdfDoc.end()
         } catch (err) {
-            reject(err);
+            reject(err)
         }
     })
-} 
+}

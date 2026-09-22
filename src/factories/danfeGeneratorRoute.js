@@ -1,11 +1,19 @@
 //@ts-check
 
-import { returnDirName } from "../media/returnDirName.js";
-import { getPDFFile } from "../services/getPDFFile.js";
 import { processarArquivo } from "../services/processFile.js";
-import { saveXMLToFile } from "../services/saveXmlFile.js"
-import path from 'path'
 
+/**
+ * @param {{ body: {
+ *   xml?: string,
+ *   NFe?: string,
+ *   profile?: string,
+ *   model?: string,
+ *   logoBase64?: string,
+ *   positionYEmitDataNFe?: number,
+ *   positionYLogoNFe?: number
+ * } }} request
+ * @param {{ status: (code: number) => { json: (body: unknown) => unknown } }} response
+ */
 export const danfeGeneratorRoute = async (request, response) => {
     try {
         const { xml, NFe, profile, model, logoBase64, positionYEmitDataNFe, positionYLogoNFe } = request.body
@@ -14,14 +22,14 @@ export const danfeGeneratorRoute = async (request, response) => {
         if (!profile) throw new Error('Informe o profile')
         if (!model) throw new Error('Informe o modelo')
 
-        const pathWaiting = path.join(returnDirName(), 'waiting_conversion', profile)
-        await saveXMLToFile(xml, pathWaiting, NFe)
-        const pathSuccess = await processarArquivo(pathWaiting, NFe, profile, model, logoBase64, positionYEmitDataNFe, positionYLogoNFe)
-        if (!pathSuccess) throw new Error('Ocorreu uma falha ao processar o arquivo')
-        getPDFFile(pathSuccess, response)
+        const pdfBuffer = await processarArquivo(xml, model, logoBase64, positionYEmitDataNFe, positionYLogoNFe)
+        return response.status(200).json({
+            success: true,
+            danfe: pdfBuffer.toString('base64'),
+        })
     } catch (error) {
-        console.log('Ocorreu um erro: ' + error)
-        return response.status(500).json({ success: false, error: error.message })
+        const message = error instanceof Error ? error.message : String(error)
+        console.log('Ocorreu um erro: ' + message)
+        return response.status(500).json({ success: false, error: message })
     }
-
 }
