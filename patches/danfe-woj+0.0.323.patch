@@ -1,0 +1,67 @@
+diff --git a/node_modules/danfe-woj/lib/geradores/geradorDePdf.js b/node_modules/danfe-woj/lib/geradores/geradorDePdf.js
+index 5ad8916..fc35e47 100644
+--- a/node_modules/danfe-woj/lib/geradores/geradorDePdf.js
++++ b/node_modules/danfe-woj/lib/geradores/geradorDePdf.js
+@@ -312,29 +312,38 @@ module.exports = function(danfe, args, callback) {
+             identificacaoDoEmitenteY = 86 + ajusteCabecalho,
+             identificacaoDoEmitenteX = 2,
+             identificacaoDoEmitenteLargura = 190,
+-            identificacaoDoEmitenteFonte = 1.5;
++            identificacaoDoEmitenteFonte = 1.5,
++            alinhamentoIdentificacaoDoEmitente = 'center';
+ 
+         if(temLogotipo) {
+             let caminhoDoLogotipo = emitente.getLogotipo();
+-            pdf.image(caminhoDoLogotipo, 92.34, 92.34 + ajusteCabecalho, {
+-                fit: [60, 60]
+-            });
++            // Logo on the left of IDENTIFICAÇÃO DO EMITENTE (same margin system as text helpers).
++            pdf.image(
++                caminhoDoLogotipo,
++                margemEsquerda + args.ajusteX + 2,
++                margemTopo + args.ajusteY + 58 + ajusteCabecalho + (args.ajusteYDoLogotipo || 0),
++                { fit: [55, 55] }
++            );
++            // Keep company name/address to the right of the logo (not drawn over it).
++            identificacaoDoEmitenteX = 62;
++            identificacaoDoEmitenteLargura = 125;
++            alinhamentoIdentificacaoDoEmitente = 'left';
+         }
+ 
+-        negrito(emitente.getNome(), identificacaoDoEmitenteX, identificacaoDoEmitenteY + args.ajusteYDaIdentificacaoDoEmitente, identificacaoDoEmitenteLargura, 'center', 8 + identificacaoDoEmitenteFonte);
++        negrito(emitente.getNome(), identificacaoDoEmitenteX, identificacaoDoEmitenteY + args.ajusteYDaIdentificacaoDoEmitente, identificacaoDoEmitenteLargura, alinhamentoIdentificacaoDoEmitente, 8 + identificacaoDoEmitenteFonte);
+ 
+         if(emitente.getEndereco().getPrimeiraLinha()) {
+             normal(emitente.getEndereco().getPrimeiraLinha(),
+                 identificacaoDoEmitenteX,
+                 pdf.y - margemTopo + 2,
+-            identificacaoDoEmitenteLargura, 'center', 5 + identificacaoDoEmitenteFonte);
++            identificacaoDoEmitenteLargura, alinhamentoIdentificacaoDoEmitente, 5 + identificacaoDoEmitenteFonte);
+         }
+ 
+         if(emitente.getEndereco().getSegundaLinha()) {
+             normal(emitente.getEndereco().getSegundaLinha(),
+                 identificacaoDoEmitenteX,
+                 pdf.y - margemTopo,
+-            identificacaoDoEmitenteLargura, 'center', 5 + identificacaoDoEmitenteFonte);
++            identificacaoDoEmitenteLargura, alinhamentoIdentificacaoDoEmitente, 5 + identificacaoDoEmitenteFonte);
+         }
+ 
+         let jaAdicionouEspacamento = false;
+@@ -345,14 +354,14 @@ module.exports = function(danfe, args, callback) {
+             normal('Telefone: ' + emitente.getTelefoneFormatado(),
+                 identificacaoDoEmitenteX,
+                 pdf.y - margemTopo + 2,
+-            identificacaoDoEmitenteLargura, 'center', 5 + identificacaoDoEmitenteFonte);
++            identificacaoDoEmitenteLargura, alinhamentoIdentificacaoDoEmitente, 5 + identificacaoDoEmitenteFonte);
+         }
+ 
+         if(emitente.getEmail()) {
+             normal('Email: ' + emitente.getEmail(),
+                 identificacaoDoEmitenteX,
+                 pdf.y - margemTopo + (jaAdicionouEspacamento ? 0 : 2),
+-            identificacaoDoEmitenteLargura, 'center', 5 + identificacaoDoEmitenteFonte);
++            identificacaoDoEmitenteLargura, alinhamentoIdentificacaoDoEmitente, 5 + identificacaoDoEmitenteFonte);
+         }
+ 
+ 

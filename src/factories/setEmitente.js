@@ -1,11 +1,12 @@
 import danfe from 'danfe-woj'
-import { applyRegistroNacionalFormat } from '../utils/utils.js'
+import { applyRegistroNacionalFormat, base64ToBuffer } from '../utils/utils.js'
 
 export function setEmitente(emitenteNF, logoBase64) {
 
     var emitente = new danfe.Emitente();
     emitente.comNome(emitenteNF?.xNome?.[0] ?? '');
-    if (logoBase64) emitente.comLogotipo(logoBase64);
+    // PDFKit needs a Buffer (or file path); SaaS sends a data URI.
+    if (logoBase64) emitente.comLogotipo(base64ToBuffer(logoBase64));
     emitente.comRegistroNacional(emitenteNF?.CNPJ?.[0] ?? emitenteNF?.CPF?.[0] ?? '');
     applyRegistroNacionalFormat(emitente)
     emitente.comInscricaoEstadual(emitenteNF?.IE?.[0] ?? '');

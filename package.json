@@ -6,11 +6,13 @@
   "license": "MIT",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "danfe-woj": "^0.0.323",
     "express": "^4.19.2",
+    "patch-package": "^8.0.1",
     "pdfmake": "^0.2.11",
     "qrcode": "^1.5.4",
     "xml2js": "^0.6.0"
