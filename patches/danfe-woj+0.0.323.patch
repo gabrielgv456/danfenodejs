@@ -65,3 +65,27 @@ index 5ad8916..fc35e47 100644
          }
  
  
+diff --git a/node_modules/danfe-woj/lib/item.js b/node_modules/danfe-woj/lib/item.js
+index 8bccdae..4ef714e 100644
+--- a/node_modules/danfe-woj/lib/item.js
++++ b/node_modules/danfe-woj/lib/item.js
+@@ -80,7 +80,8 @@ let Item = (function() {
+     };
+ 
+     Item.prototype.getQuantidadeFormatada = function() {
+-        return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(this.getQuantidade());
++        // qCom aceita até 4 casas.
++        return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(Number(this.getQuantidade()));
+     };
+ 
+     Item.prototype.comQuantidade = function(_quantidade) {
+@@ -94,7 +95,8 @@ let Item = (function() {
+     };
+ 
+     Item.prototype.getValorUnitarioFormatado = function() {
+-        return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(this.getValorUnitario());
++        // vUnCom aceita até 10 casas (combustível por litro etc.): mostra o valor do XML sem cortar.
++        return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 10 }).format(Number(this.getValorUnitario()));
+     };
+ 
+     Item.prototype.comValorUnitario = function(_valorUnitario) {
